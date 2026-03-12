@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Converter</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #1c1c1c;
+      --panel-3: #242424;
+      --line: #2f2f2f;
+      --text: #f6efe7;
+      --muted: #a79a8c;
+      --accent: #ff8c42;
+      --accent-2: #ffb071;
+      --accent-soft: rgba(255, 140, 66, 0.12);
+      --danger: #ff6b57;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.36);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(255, 140, 66, 0.1), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(255, 140, 66, 0.07), transparent 22%),
+        linear-gradient(180deg, #070707 0%, #111111 100%);
+      color: var(--text);
+      font: 14px/1.45 "Segoe UI", "DejaVu Sans", sans-serif;
+    }
+
+    .shell {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 26px 26px 40px;
+    }
+
+    .hero-shell {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding-top: 6px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      display: grid;
+      gap: 10px;
+      padding: 16px 20px 14px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 140, 66, 0.14);
+      background: rgba(12, 12, 12, 0.78);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .hero-title {
+      display: grid;
+      justify-items: center;
+      text-align: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    .hero-subtitle {
+      margin: 0;
+      max-width: 660px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 140, 66, 0.22);
+      background: rgba(255, 140, 66, 0.08);
+      color: var(--accent-2);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 20px rgba(255, 140, 66, 0.7);
+    }
+
+    .layout,
+    .main-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 18px 20px 0;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .dropzone {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      border: 1px dashed rgba(255, 140, 66, 0.36);
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,140,66,0.06), rgba(255,140,66,0.02)),
+        var(--panel-2);
+      padding: 28px 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .dropzone.dragover {
+      border-color: rgba(255, 176, 113, 0.92);
+      background:
+        linear-gradient(180deg, rgba(255,140,66,0.12), rgba(255,140,66,0.03)),
+        var(--panel-3);
+      transform: translateY(-2px);
+    }
+
+    .dropzone strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .dropzone span {
+      color: var(--muted);
+    }
+
+    .dropzone input[type="file"] {
+      display: none;
+    }
+
+    .dropzone-button {
+      width: auto;
+      min-width: 170px;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--accent), #ea7a30);
+      color: #111;
+      border: none;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(255, 140, 66, 0.16);
+    }
+
+    .dropzone-button:hover {
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+    }
+
+    .dropzone-file-name {
+      margin-top: 10px;
+      min-width: 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .drop-pill-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .drop-pill {
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 140, 66, 0.16);
+      background: rgba(255, 140, 66, 0.08);
+      color: var(--accent-2);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 140, 66, 0.12);
+    }
+
+    textarea {
+      min-height: 470px;
+      resize: vertical;
+      font-family: "DejaVu Sans Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .inline-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      min-height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .inline-check input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: var(--accent);
+      color: #111;
+      font-weight: 800;
+    }
+
+    button:hover {
+      background: var(--accent-2);
+      transform: translateY(-1px);
+      box-shadow: 0 12px 26px rgba(255, 140, 66, 0.18);
+    }
+
+    button.secondary {
+      background: #242424;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .inline-message {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 107, 87, 0.28);
+      background: rgba(255, 107, 87, 0.08);
+      color: #ffb3a8;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .inline-message.show {
+      display: block;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .preview-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .preview-title .bullet {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(255, 140, 66, 0.7);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: inline-flex;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 14px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      width: auto;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: none;
+    }
+
+    .filter-chip:hover {
+      transform: none;
+      box-shadow: none;
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+    }
+
+    .pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #222;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pill.accent {
+      background: var(--accent);
+      color: #111;
+      border-color: var(--accent);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+    }
+
+    .toolbar button {
+      width: auto;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+
+    .textarea-wrap {
+      position: relative;
+    }
+
+    .map-wrap {
+      padding: 20px;
+    }
+
+    .drawer {
+      overflow: hidden;
+    }
+
+    .drawer summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 20px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      user-select: none;
+    }
+
+    .drawer summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .drawer summary::after {
+      content: "▾";
+      color: var(--accent-2);
+      font-size: 18px;
+      line-height: 1;
+      transition: transform 150ms ease;
+    }
+
+    .drawer[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .drawer-body {
+      padding: 0 20px 20px;
+    }
+
+    .map-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .map-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .map-stage {
+      height: 340px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 140, 66, 0.04), transparent 28%),
+        linear-gradient(0deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px),
+        #121212;
+      background-size: auto, 38px 38px, 38px 38px, auto;
+      position: relative;
+    }
+
+    .map-layer-controls {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 600;
+    }
+
+    .leaflet-map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-empty {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+      background: rgba(10, 10, 10, 0.42);
+      pointer-events: none;
+      z-index: 500;
+    }
+
+    .leaflet-container {
+      background: #101010;
+      font: inherit;
+    }
+
+    .leaflet-control-attribution,
+    .leaflet-control-zoom a {
+      background: rgba(20, 20, 20, 0.92) !important;
+      color: var(--text) !important;
+      border-color: var(--line) !important;
+    }
+
+    .leaflet-control-attribution a {
+      color: var(--accent-2) !important;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-mark {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+    }
+
+    .legend-line {
+      width: 18px;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    code {
+      background: rgba(255,255,255,0.05);
+      border-radius: 7px;
+      padding: 2px 6px;
+    }
+
+    @media (max-width: 1180px) {
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .shell {
+        padding: 18px 14px 28px;
+      }
+
+      h1 {
+        font-size: 26px;
+        white-space: normal;
+      }
+
+      .hero-top {
+        flex-direction: column;
+      }
+
+      .row-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .actions,
+      .toolbar,
+      .preview-head,
+      .map-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero-shell">
+      <section class="hero">
+        <div class="hero-top">
+          <div style="width:140px;"></div>
+          <div class="hero-title">
+            <h1>Mission Converter</h1>
+            <p class="hero-subtitle">Load a mission, compare source and converted structure side by side, then verify the route on the minimap before export. <code>.lwp</code> is the LYNK-specific waypoint format.</p>
+          </div>
+          <div id="status" class="status">
+            <span class="status-dot"></span>
+            <span id="statusText">Ready</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="layout">
+      <details class="card drawer" open>
+        <summary>Workflow</summary>
+        <div class="drawer-body">
+          <div class="stack">
+            <div id="dropzone" class="dropzone">
+              <strong>Drag and drop a mission file</strong>
+              <span>Supports <code>.plan</code>, <code>.waypoints</code>, <code>.wpl</code>, and <code>.lwp</code> <span style="color:#ffb071;">(LYNK-specific format)</span></span>
+              <label for="fileInput" class="dropzone-button">Choose Mission File</label>
+              <input id="fileInput" type="file" accept=".plan,.waypoints,.wpl,.lwp" />
+              <div id="fileNameLabel" class="dropzone-file-name">No file selected</div>
+              <div class="drop-pill-row">
+                <span class="drop-pill">Offline Safe</span>
+                <span class="drop-pill">No Backend</span>
+                <span class="drop-pill">Browser Conversion</span>
+              </div>
+            </div>
+
+            <div id="workflowMessage" class="inline-message"></div>
+
+            <div class="row-2">
+              <div>
+                <label for="sourceFormat">Source Format</label>
+                <select id="sourceFormat">
+                  <option value="plan">plan</option>
+                  <option value="waypoints">waypoints</option>
+                  <option value="lwp">lwp</option>
+                </select>
+              </div>
+              <div>
+                <label for="targetFormat">Target Format</label>
+                <select id="targetFormat">
+                  <option value="lwp">lwp</option>
+                  <option value="plan">plan</option>
+                  <option value="waypoints">waypoints</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="convertBtn" type="button">Convert Mission</button>
+              <button id="downloadBtn" type="button" class="secondary">Download Output</button>
+            </div>
+
+            <div class="pill-row">
+              <div id="sourceBadge" class="pill">Source: -</div>
+              <div id="targetBadge" class="pill accent">Target: lwp</div>
+              <div id="countBadge" class="pill">0 items</div>
+            </div>
+
+            <div class="hint">
+              Load a mission, convert it, then inspect the map and compare structures below.
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card drawer" open>
+        <summary>Map</summary>
+        <div class="drawer-body">
+          <div class="map-wrap" style="padding:0;">
+            <div class="map-head">
+              <div>
+                <div class="preview-title">
+                  <span class="bullet"></span>
+                  <span>Route Snapshot</span>
+                </div>
+                <div class="map-meta" id="mapMeta">No waypoint geometry available yet.</div>
+              </div>
+              <div style="display:grid; gap:8px; justify-items:end;">
+              <div class="filter-group">
+                <button id="filterBoth" type="button" class="filter-chip active">Show Both</button>
+                <button id="filterSource" type="button" class="filter-chip">Source Only</button>
+                <button id="filterConverted" type="button" class="filter-chip">Converted Only</button>
+              </div>
+              </div>
+            </div>
+            <div class="map-stage">
+              <div id="leafletMap" class="leaflet-map"></div>
+              <div id="mapEmpty" class="map-empty">Load a mission and convert it to visualize waypoints with latitude and longitude.</div>
+              <div class="map-layer-controls">
+                <div class="filter-group">
+                  <button id="layerStreet" type="button" class="filter-chip">Street</button>
+                  <button id="layerTopo" type="button" class="filter-chip">Topo</button>
+                  <button id="layerSatellite" type="button" class="filter-chip active">Satellite</button>
+                </div>
+              </div>
+            </div>
+            <div class="legend">
+              <span class="legend-item"><span class="legend-line"></span> source path</span>
+              <span class="legend-item"><span class="legend-mark" style="background:#ff8c42;"></span> source points</span>
+              <span class="legend-item"><span class="legend-mark" style="background:#42e8dc;"></span> converted points</span>
+              <span class="legend-item"><span class="legend-mark" style="background:#a6ff4d;"></span> camera trigger</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card drawer" open>
+        <summary>Compare</summary>
+        <div class="drawer-body">
+          <section class="preview-grid">
+            <article class="card">
+              <div class="card-head">Before Conversion</div>
+              <div class="card-body">
+                <div class="preview-head">
+                  <div class="preview-title">
+                    <span class="bullet"></span>
+                    <span>Original Structure</span>
+                  </div>
+                  <div class="toolbar">
+                    <button id="copySourceBtn" type="button" class="secondary">Copy Source</button>
+                  </div>
+                </div>
+                <div class="textarea-wrap">
+                  <textarea id="sourcePreview" spellcheck="false" placeholder="Loaded source content appears here."></textarea>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head">After Conversion</div>
+              <div class="card-body">
+                <div class="preview-head">
+                  <div class="preview-title">
+                    <span class="bullet"></span>
+                    <span>Converted Output</span>
+                  </div>
+                  <div class="toolbar">
+                    <button id="copyBtn" type="button" class="secondary">Copy Output</button>
+                  </div>
+                </div>
+                <div class="textarea-wrap">
+                  <textarea id="preview" spellcheck="false" placeholder="Converted output appears here."></textarea>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    const COMMAND_NAME_TO_ID = {
+      MAV_CMD_NAV_WAYPOINT: 16,
+      MAV_CMD_NAV_RETURN_TO_LAUNCH: 20,
+      MAV_CMD_NAV_TAKEOFF: 22,
+      MAV_CMD_DO_SET_CAM_TRIGG_DIST: 206,
+    };
+
+    const COMMAND_ID_TO_NAME = Object.fromEntries(
+      Object.entries(COMMAND_NAME_TO_ID).map(([name, id]) => [String(id), name])
+    );
+
+    const state = {
+      fileName: "",
+      sourceContent: "",
+      sourceMission: null,
+      outputText: "",
+      outputMission: null,
+      mapFilter: "both",
+      mapStyle: "satellite",
+      leafletMap: null,
+      baseLayer: null,
+      sourceLayer: null,
+      convertedLayer: null,
+    };
+
+    const statusText = document.getElementById("statusText");
+    const sourceBadge = document.getElementById("sourceBadge");
+    const targetBadge = document.getElementById("targetBadge");
+    const countBadge = document.getElementById("countBadge");
+    const fileInput = document.getElementById("fileInput");
+    const fileNameLabel = document.getElementById("fileNameLabel");
+    const sourceFormat = document.getElementById("sourceFormat");
+    const targetFormat = document.getElementById("targetFormat");
+    const preview = document.getElementById("preview");
+    const sourcePreview = document.getElementById("sourcePreview");
+    const dropzone = document.getElementById("dropzone");
+    const copyBtn = document.getElementById("copyBtn");
+    const copySourceBtn = document.getElementById("copySourceBtn");
+    const leafletMapEl = document.getElementById("leafletMap");
+    const mapEmpty = document.getElementById("mapEmpty");
+    const mapMeta = document.getElementById("mapMeta");
+    const workflowMessage = document.getElementById("workflowMessage");
+    const filterBoth = document.getElementById("filterBoth");
+    const filterSource = document.getElementById("filterSource");
+    const filterConverted = document.getElementById("filterConverted");
+    const layerStreet = document.getElementById("layerStreet");
+    const layerTopo = document.getElementById("layerTopo");
+    const layerSatellite = document.getElementById("layerSatellite");
+
+    function formatError(message) {
+      const err = new Error(message);
+      err.name = "MissionFormatError";
+      return err;
+    }
+
+    function setStatus(text) {
+      statusText.textContent = text;
+    }
+
+    function setWorkflowMessage(text = "") {
+      workflowMessage.textContent = text;
+      workflowMessage.classList.toggle("show", Boolean(text));
+    }
+
+    function setMapFilter(filterName) {
+      state.mapFilter = filterName;
+      filterBoth.classList.toggle("active", filterName === "both");
+      filterSource.classList.toggle("active", filterName === "source");
+      filterConverted.classList.toggle("active", filterName === "converted");
+      renderMap(state.sourceMission, state.outputMission);
+    }
+
+    function getBaseLayerConfig(styleName) {
+      if (styleName === "satellite") {
+        return {
+          url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          options: {
+            maxZoom: 18,
+            attribution: "Tiles &copy; Esri",
+          },
+        };
+      }
+      if (styleName === "topo") {
+        return {
+          url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+          options: {
+            maxZoom: 17,
+            attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+          },
+        };
+      }
+      return {
+        url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+        options: {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team',
+        },
+      };
+    }
+
+    function setMapStyle(styleName) {
+      state.mapStyle = styleName;
+      layerStreet.classList.toggle("active", styleName === "street");
+      layerTopo.classList.toggle("active", styleName === "topo");
+      layerSatellite.classList.toggle("active", styleName === "satellite");
+      if (!state.leafletMap || typeof L === "undefined") return;
+      if (state.baseLayer) {
+        state.leafletMap.removeLayer(state.baseLayer);
+      }
+      const config = getBaseLayerConfig(styleName);
+      state.baseLayer = L.tileLayer(config.url, config.options).addTo(state.leafletMap);
+    }
+
+    function toFloat(value, fallback = 0.0) {
+      if (value === "" || value === null || value === undefined) return Number(fallback);
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : Number(fallback);
+    }
+
+    function toInt(value, fallback = 0) {
+      if (value === "" || value === null || value === undefined) return Number(fallback);
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : Number(fallback);
+    }
+
+    function hasMeaningfulCoords(lat, lon) {
+      return Math.abs(toFloat(lat)) > 1e-9 || Math.abs(toFloat(lon)) > 1e-9;
+    }
+
+    function takeoffMinPitch(item, fallback = 0.0) {
+      if ("min_pitch_deg" in item) return toFloat(item.min_pitch_deg, fallback);
+      if ("min_pitch_degree" in item) return toFloat(item.min_pitch_degree, fallback);
+      if ("param1" in item) return toFloat(item.param1, fallback);
+      return Number(fallback);
+    }
+
+    function commandToName(command) {
+      if (typeof command === "string") {
+        const text = command.trim();
+        if (!text) throw formatError("Empty command value.");
+        return text;
+      }
+      const numeric = String(toInt(command));
+      return COMMAND_ID_TO_NAME[numeric] || numeric;
+    }
+
+    function commandToId(command) {
+      if (typeof command === "number") return command;
+      const text = String(command).trim();
+      if (text in COMMAND_NAME_TO_ID) return COMMAND_NAME_TO_ID[text];
+      const numeric = parseInt(text, 10);
+      if (Number.isFinite(numeric)) return numeric;
+      throw formatError(`Unsupported command name: ${command}`);
+    }
+
+    function detectFormat(name) {
+      const lower = name.toLowerCase();
+      if (lower.endsWith(".plan")) return "plan";
+      if (lower.endsWith(".waypoints") || lower.endsWith(".wpl")) return "waypoints";
+      if (lower.endsWith(".lwp")) return "lwp";
+      return "";
+    }
+
+    function fmtNum(value) {
+      if (value === null || value === undefined) return "0";
+      if (typeof value === "boolean") return value ? "1" : "0";
+      if (Number.isInteger(value)) return String(value);
+      if (typeof value === "number") return value.toFixed(10).replace(/0+$/, "").replace(/\.$/, "") || "0";
+      return String(value);
+    }
+
+    function loadPlanData(data) {
+      if (data.fileType !== "Plan") throw formatError("This file is not a valid QGroundControl .plan file.");
+      const items = (((data || {}).mission || {}).items) || [];
+      const waypoints = [];
+
+      items.forEach((item, index) => {
+        if (item.type !== "SimpleItem") throw formatError(`Unsupported mission item type: ${item.type}`);
+        const params = [...(item.params || [])];
+        while (params.length < 7) params.push(0);
+        params.length = 7;
+        const commandName = commandToName(item.command ?? 16);
+        const waypoint = { command: commandName, seq: index };
+
+        if (commandName === "MAV_CMD_NAV_WAYPOINT") {
+          if (toFloat(params[1]) > 0) waypoint.acceptance_radius_m = toFloat(params[1]);
+          waypoint.lat = toFloat(params[4]);
+          waypoint.lon = toFloat(params[5]);
+          waypoint.alt = toFloat(params[6]);
+        } else if (commandName === "MAV_CMD_NAV_TAKEOFF") {
+          if (hasMeaningfulCoords(params[4], params[5])) {
+            waypoint.lat = toFloat(params[4]);
+            waypoint.lon = toFloat(params[5]);
+          }
+          if (toFloat(params[0]) !== 0.0) waypoint.min_pitch_deg = toFloat(params[0]);
+          waypoint.alt = toFloat(params[6]);
+        } else if (commandName === "MAV_CMD_DO_SET_CAM_TRIGG_DIST") {
+          waypoint.trigger_dist_m = toFloat(params[0]);
+          if (toInt(params[2], 0)) waypoint.trigger_once = toInt(params[2], 0);
+          if (![null, "", 0].includes(params[6])) waypoint.alt = toFloat(params[6]);
+        } else if (commandName !== "MAV_CMD_NAV_RETURN_TO_LAUNCH") {
+          waypoint.params = params.map((value) => toFloat(value));
+        }
+
+        waypoints.push(waypoint);
+      });
+
+      return { mission_id: 1, replace_existing: true, waypoints };
+    }
+
+    function loadWaypointsText(text) {
+      const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (!lines.length || lines[0] !== "QGC WPL 110") throw formatError("Invalid QGC WPL 110 file.");
+      const waypoints = [];
+
+      lines.slice(1).forEach((line) => {
+        const parts = line.split(/\s+/);
+        if (parts.length < 12) throw formatError(`Invalid WPL line: ${line}`);
+
+        const seq = toInt(parts[0]);
+        const commandName = commandToName(toInt(parts[3]));
+        const params = parts.slice(4, 11).map((value) => toFloat(value));
+        const waypoint = { command: commandName, seq };
+
+        if (commandName === "MAV_CMD_NAV_WAYPOINT") {
+          if (params[1] > 0) waypoint.acceptance_radius_m = params[1];
+          waypoint.lat = params[4];
+          waypoint.lon = params[5];
+          waypoint.alt = params[6];
+        } else if (commandName === "MAV_CMD_NAV_TAKEOFF") {
+          if (hasMeaningfulCoords(params[4], params[5])) {
+            waypoint.lat = params[4];
+            waypoint.lon = params[5];
+          }
+          if (params[0] !== 0.0) waypoint.min_pitch_deg = params[0];
+          waypoint.alt = params[6];
+        } else if (commandName === "MAV_CMD_DO_SET_CAM_TRIGG_DIST") {
+          waypoint.trigger_dist_m = params[0];
+          if (parseInt(params[2], 10)) waypoint.trigger_once = parseInt(params[2], 10);
+          if (params[6]) waypoint.alt = params[6];
+        } else if (commandName !== "MAV_CMD_NAV_RETURN_TO_LAUNCH") {
+          waypoint.params = params;
+        }
+
+        waypoints.push(waypoint);
+      });
+
+      return { mission_id: 1, replace_existing: true, waypoints };
+    }
+
+    function loadLynkData(data) {
+      let rawWaypoints;
+      let missionId = 1;
+      let replaceExistingFlag = true;
+
+      if (data && typeof data === "object" && !Array.isArray(data) && Array.isArray(data.waypoints)) {
+        rawWaypoints = data.waypoints;
+        missionId = toInt(data.mission_id, 1);
+        replaceExistingFlag = Boolean(data.replace_existing ?? true);
+      } else {
+        throw formatError("Invalid .lwp file. Expected an object like { mission_id, replace_existing, waypoints }.");
+      }
+
+      const waypoints = rawWaypoints.map((item, index) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw formatError(`Waypoint #${index} is not an object.`);
+        }
+        return {
+          ...item,
+          command: commandToName(item.command),
+          seq: item.seq ?? index,
+        };
+      });
+
+      return { mission_id: missionId, replace_existing: replaceExistingFlag, waypoints };
+    }
+
+    function loadMissionFromText(text, fmt) {
+      if (fmt === "plan") return loadPlanData(JSON.parse(text));
+      if (fmt === "waypoints") return loadWaypointsText(text);
+      if (fmt === "lwp") return loadLynkData(JSON.parse(text));
+      throw formatError(`Unsupported format: ${fmt}`);
+    }
+
+    function waypointToWplLine(seq, item) {
+      const commandName = commandToName(item.command);
+      const commandId = commandToId(commandName);
+      const frame = toInt(item.frame, 3);
+      const current = seq === 0 ? 1 : 0;
+      const autoContinue = item.autoContinue === false ? 0 : 1;
+      let params;
+
+      if (Array.isArray(item.params)) {
+        params = item.params.slice(0, 7);
+        while (params.length < 7) params.push(0);
+      } else if (commandName === "MAV_CMD_NAV_WAYPOINT") {
+        params = [
+          toFloat(item.param1, 0),
+          toFloat(item.acceptance_radius_m ?? item.param2, 0),
+          toFloat(item.param3, 0),
+          toFloat(item.param4, 0),
+          toFloat(item.lat, 0),
+          toFloat(item.lon, 0),
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_NAV_TAKEOFF") {
+        params = [
+          takeoffMinPitch(item, 0),
+          toFloat(item.param2, 0),
+          toFloat(item.param3, 0),
+          toFloat(item.param4, 0),
+          toFloat(item.lat, 0),
+          toFloat(item.lon, 0),
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_DO_SET_CAM_TRIGG_DIST") {
+        params = [
+          toFloat(item.trigger_dist_m, 0),
+          toFloat(item.param2, 0),
+          toFloat(item.trigger_once, 0),
+          toFloat(item.param4, 0),
+          0,
+          0,
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_NAV_RETURN_TO_LAUNCH") {
+        params = [0, 0, 0, 0, 0, 0, 0];
+      } else {
+        throw formatError(`Unsupported command for WPL export: ${commandName}`);
+      }
+
+      return [
+        seq,
+        current,
+        frame,
+        commandId,
+        fmtNum(params[0]),
+        fmtNum(params[1]),
+        fmtNum(params[2]),
+        fmtNum(params[3]),
+        fmtNum(params[4]),
+        fmtNum(params[5]),
+        fmtNum(params[6]),
+        autoContinue,
+      ].join("\t");
+    }
+
+    function saveWaypointsText(mission) {
+      const lines = ["QGC WPL 110"];
+      (mission.waypoints || []).forEach((waypoint, index) => lines.push(waypointToWplLine(index, waypoint)));
+      return `${lines.join("\n")}\n`;
+    }
+
+    function waypointToPlanItem(seq, item) {
+      const commandName = commandToName(item.command);
+      const commandId = commandToId(commandName);
+      let params;
+
+      if (Array.isArray(item.params)) {
+        params = item.params.slice(0, 7);
+        while (params.length < 7) params.push(0);
+      } else if (commandName === "MAV_CMD_NAV_WAYPOINT") {
+        params = [
+          toFloat(item.param1, 0),
+          toFloat(item.acceptance_radius_m ?? item.param2, 0),
+          toFloat(item.param3, 0),
+          toFloat(item.param4, 0),
+          toFloat(item.lat, 0),
+          toFloat(item.lon, 0),
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_NAV_TAKEOFF") {
+        params = [
+          takeoffMinPitch(item, 0),
+          toFloat(item.param2, 0),
+          toFloat(item.param3, 0),
+          toFloat(item.param4, 0),
+          toFloat(item.lat, 0),
+          toFloat(item.lon, 0),
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_DO_SET_CAM_TRIGG_DIST") {
+        params = [
+          toFloat(item.trigger_dist_m, 0),
+          toFloat(item.param2, 0),
+          toFloat(item.trigger_once, 0),
+          toFloat(item.param4, 0),
+          0,
+          0,
+          toFloat(item.alt, 0),
+        ];
+      } else if (commandName === "MAV_CMD_NAV_RETURN_TO_LAUNCH") {
+        params = [0, 0, 0, 0, 0, 0, 0];
+      } else {
+        throw formatError(`Unsupported command for .plan export: ${commandName}`);
+      }
+
+      return {
+        AMSLAltAboveTerrain: null,
+        Altitude: toFloat(params[6]),
+        AltitudeMode: 1,
+        autoContinue: item.autoContinue !== false,
+        command: commandId,
+        doJumpId: seq + 1,
+        frame: toInt(item.frame, 3),
+        params: params.map((value) => toFloat(value)),
+        type: "SimpleItem",
+      };
+    }
+
+    function savePlanText(mission) {
+      const items = (mission.waypoints || []).map((item, index) => waypointToPlanItem(index, item));
+      return `${JSON.stringify({
+        fileType: "Plan",
+        geoFence: { circles: [], polygons: [], version: 2 },
+        groundStation: "QGroundControl",
+        mission: {
+          cruiseSpeed: 15,
+          firmwareType: 12,
+          globalPlanAltitudeMode: 1,
+          hoverSpeed: 5,
+          items,
+          plannedHomePosition: [0, 0, 0],
+          vehicleType: 2,
+          version: 2,
+        },
+        rallyPoints: { points: [], version: 2 },
+        version: 1,
+      }, null, 2)}\n`;
+    }
+
+    function saveLynkText(mission) {
+      return `${JSON.stringify(mission.waypoints || [], null, 2)}\n`;
+    }
+
+    function convertMissionText(text, sourceFmt, targetFmt, missionIdValue, replaceExistingValue) {
+      const mission = loadMissionFromText(text, sourceFmt);
+      mission.mission_id = missionIdValue;
+      mission.replace_existing = replaceExistingValue;
+      if (targetFmt === "lwp") return { mission, outputText: saveLynkText(mission) };
+      if (targetFmt === "plan") return { mission, outputText: savePlanText(mission) };
+      if (targetFmt === "waypoints") return { mission, outputText: saveWaypointsText(mission) };
+      throw formatError(`Unsupported output format: ${targetFmt}`);
+    }
+
+    function updateBadges(count = 0) {
+      sourceBadge.textContent = `Source: ${sourceFormat.value}`;
+      targetBadge.textContent = `Target: ${targetFormat.value}`;
+      countBadge.textContent = `${count} items`;
+    }
+
+    function readFile(file) {
+      state.fileName = file.name;
+      fileNameLabel.textContent = file.name;
+      const detected = detectFormat(file.name);
+      if (!detected) {
+        state.fileName = "";
+        state.sourceContent = "";
+        state.sourceMission = null;
+        state.outputText = "";
+        state.outputMission = null;
+        fileNameLabel.textContent = "Unsupported file type";
+        sourcePreview.value = "";
+        preview.value = "";
+        updateBadges(0);
+        renderMap(null, null);
+        setStatus("Ready");
+        setWorkflowMessage("Only .plan, .waypoints, .wpl, and .lwp files are allowed.");
+        fileInput.value = "";
+        return;
+      }
+      setWorkflowMessage("");
+      if (detected) sourceFormat.value = detected;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.sourceContent = String(reader.result || "");
+        sourcePreview.value = state.sourceContent;
+        preview.value = "";
+        state.outputText = "";
+        state.outputMission = null;
+        try {
+          state.sourceMission = loadMissionFromText(state.sourceContent, sourceFormat.value);
+          setStatus(`Loaded ${file.name}`);
+          updateBadges((state.sourceMission.waypoints || []).length);
+          renderMap(state.sourceMission, null);
+        } catch (_error) {
+          state.sourceMission = null;
+          updateBadges(0);
+          renderMap(null, null);
+          setStatus(`Loaded ${file.name}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function extractMapData(mission) {
+      if (!mission || !Array.isArray(mission.waypoints)) {
+        return { routePoints: [], triggerPoints: [] };
+      }
+
+      const routePoints = [];
+      const triggerPoints = [];
+      let lastCoord = null;
+
+      mission.waypoints.forEach((item, index) => {
+        const seq = item.seq ?? index;
+        if (item && hasMeaningfulCoords(item.lat, item.lon)) {
+          lastCoord = {
+            lat: toFloat(item.lat),
+            lon: toFloat(item.lon),
+            seq,
+            acceptanceRadius: toFloat(item.acceptance_radius_m, 0),
+          };
+          routePoints.push(lastCoord);
+          return;
+        }
+
+        if (item && item.command === "MAV_CMD_DO_SET_CAM_TRIGG_DIST" && lastCoord) {
+          triggerPoints.push({
+            lat: lastCoord.lat,
+            lon: lastCoord.lon,
+            seq,
+            triggerDist: toFloat(item.trigger_dist_m, 0),
+          });
+        }
+      });
+
+      return { routePoints, triggerPoints };
+    }
+
+    function ensureMap() {
+      if (state.leafletMap || typeof L === "undefined") return;
+      state.leafletMap = L.map(leafletMapEl, { zoomControl: true, attributionControl: true });
+      setMapStyle(state.mapStyle);
+      state.sourceLayer = L.layerGroup().addTo(state.leafletMap);
+      state.convertedLayer = L.layerGroup().addTo(state.leafletMap);
+      state.leafletMap.setView([39.0, 35.0], 5);
+    }
+
+    function clearMapLayers() {
+      if (!state.sourceLayer || !state.convertedLayer) return;
+      state.sourceLayer.clearLayers();
+      state.convertedLayer.clearLayers();
+    }
+
+    function addRouteToLayer(layer, points, options) {
+      if (!points.length) return;
+      const latLngs = points.map((point) => [point.lat, point.lon]);
+      L.polyline(latLngs, options.polyline).addTo(layer);
+      points.forEach((point) => {
+        if (point.acceptanceRadius > 0) {
+          L.circle([point.lat, point.lon], {
+            radius: point.acceptanceRadius,
+            color: options.radiusColor,
+            weight: 1.5,
+            opacity: 0.55,
+            fillColor: options.radiusColor,
+            fillOpacity: 0.08,
+          }).addTo(layer);
+        }
+        const marker = L.circleMarker([point.lat, point.lon], options.marker).addTo(layer);
+        const radiusText = point.acceptanceRadius > 0 ? ` • radius ${point.acceptanceRadius}m` : "";
+        marker.bindTooltip(`${options.label} #${point.seq}${radiusText}`, { direction: "top", offset: [0, -8] });
+      });
+    }
+
+    function addTriggerToLayer(layer, triggers, labelPrefix) {
+      triggers.forEach((trigger) => {
+        const marker = L.circleMarker([trigger.lat, trigger.lon], {
+          radius: 5,
+          color: "#111111",
+          weight: 2,
+          fillColor: "#a6ff4d",
+          fillOpacity: 1,
+        }).addTo(layer);
+        marker.bindTooltip(`${labelPrefix} trigger #${trigger.seq} • ${trigger.triggerDist}m`, {
+          direction: "right",
+          offset: [10, 0],
+        });
+      });
+    }
+
+    function renderMap(sourceMission, outputMission) {
+      const sourceData = state.mapFilter === "converted" ? { routePoints: [], triggerPoints: [] } : extractMapData(sourceMission);
+      const outputData = state.mapFilter === "source" ? { routePoints: [], triggerPoints: [] } : extractMapData(outputMission);
+      const sourcePoints = sourceData.routePoints;
+      const outputPoints = outputData.routePoints;
+      const all = [...sourcePoints, ...outputPoints, ...sourceData.triggerPoints, ...outputData.triggerPoints];
+      ensureMap();
+      clearMapLayers();
+
+      if (!state.leafletMap || !all.length) {
+        mapEmpty.style.display = "grid";
+        mapMeta.textContent = "No waypoint geometry available yet.";
+        return;
+      }
+
+      mapEmpty.style.display = "none";
+      if (state.mapFilter === "source") {
+        mapMeta.textContent = `${sourcePoints.length} source points visible`;
+      } else if (state.mapFilter === "converted") {
+        mapMeta.textContent = `${outputPoints.length} converted points • ${outputData.triggerPoints.length} triggers`;
+      } else {
+        mapMeta.textContent = `${sourcePoints.length} source points • ${outputPoints.length} converted points • ${sourceData.triggerPoints.length + outputData.triggerPoints.length} triggers`;
+      }
+
+      addRouteToLayer(state.sourceLayer, sourcePoints, {
+        label: "Source",
+        polyline: { color: "#ff8c42", weight: 4, opacity: 0.95 },
+        marker: { radius: 6, color: "#111111", weight: 2, fillColor: "#ff8c42", fillOpacity: 1 },
+        radiusColor: "#ff8c42",
+      });
+      addRouteToLayer(state.convertedLayer, outputPoints, {
+        label: "Converted",
+        polyline: { color: "#42e8dc", weight: 4, opacity: 0.95, dashArray: "8 6" },
+        marker: { radius: 6, color: "#111111", weight: 2, fillColor: "#42e8dc", fillOpacity: 1 },
+        radiusColor: "#42e8dc",
+      });
+      addTriggerToLayer(state.sourceLayer, sourceData.triggerPoints, "Source");
+      addTriggerToLayer(state.convertedLayer, outputData.triggerPoints, "Converted");
+
+      const bounds = L.latLngBounds(all.map((point) => [point.lat, point.lon]));
+      state.leafletMap.fitBounds(bounds.pad(0.18));
+    }
+
+    function convertMission() {
+      if (!state.sourceContent) {
+        setStatus("Select a file first");
+        return;
+      }
+
+      sourcePreview.value = state.sourceContent;
+
+      try {
+        const parsedSource = loadMissionFromText(state.sourceContent, sourceFormat.value);
+        state.sourceMission = parsedSource;
+        const { mission, outputText } = convertMissionText(
+          state.sourceContent,
+          sourceFormat.value,
+          targetFormat.value,
+          1,
+          true
+        );
+        state.outputText = outputText;
+        state.outputMission = mission;
+        preview.value = outputText;
+        updateBadges((mission.waypoints || []).length);
+        setStatus(`${(mission.waypoints || []).length} items ready`);
+        renderMap(parsedSource, mission);
+      } catch (error) {
+        state.outputMission = null;
+        preview.value = error.message || String(error);
+        updateBadges(0);
+        renderMap(state.sourceMission, null);
+        setStatus("Conversion error");
+      }
+    }
+
+    function downloadOutput() {
+      if (!state.outputText) {
+        setStatus("Nothing to download");
+        return;
+      }
+
+      const ext = targetFormat.value === "plan" ? ".plan" : targetFormat.value === "waypoints" ? ".waypoints" : ".lwp";
+      const base = state.fileName ? state.fileName.replace(/\.[^.]+$/, "") : "converted_mission";
+      const blob = new Blob([state.outputText], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${base}${ext}`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setStatus(`Downloaded ${base}${ext}`);
+    }
+
+    async function copyOutput() {
+      if (!state.outputText) {
+        setStatus("Nothing to copy");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(state.outputText);
+      } catch (_error) {
+        preview.select();
+        document.execCommand("copy");
+      }
+      setStatus("Converted output copied");
+    }
+
+    async function copySource() {
+      if (!state.sourceContent) {
+        setStatus("Nothing to copy");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(state.sourceContent);
+      } catch (_error) {
+        sourcePreview.select();
+        document.execCommand("copy");
+      }
+      setStatus("Source content copied");
+    }
+
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) readFile(file);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "dragend", "drop"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+
+    dropzone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer.files[0];
+      if (file) readFile(file);
+    });
+
+    sourceFormat.addEventListener("change", () => {
+      updateBadges(state.outputMission ? (state.outputMission.waypoints || []).length : 0);
+      if (state.sourceContent) {
+        try {
+          state.sourceMission = loadMissionFromText(state.sourceContent, sourceFormat.value);
+          renderMap(state.sourceMission, state.outputMission);
+        } catch (_error) {
+          state.sourceMission = null;
+          renderMap(null, state.outputMission);
+        }
+      }
+    });
+
+    targetFormat.addEventListener("change", () => {
+      updateBadges(state.outputMission ? (state.outputMission.waypoints || []).length : 0);
+    });
+
+    document.getElementById("convertBtn").addEventListener("click", convertMission);
+    document.getElementById("downloadBtn").addEventListener("click", downloadOutput);
+    copyBtn.addEventListener("click", copyOutput);
+    copySourceBtn.addEventListener("click", copySource);
+    filterBoth.addEventListener("click", () => setMapFilter("both"));
+    filterSource.addEventListener("click", () => setMapFilter("source"));
+    filterConverted.addEventListener("click", () => setMapFilter("converted"));
+    layerStreet.addEventListener("click", () => setMapStyle("street"));
+    layerTopo.addEventListener("click", () => setMapStyle("topo"));
+    layerSatellite.addEventListener("click", () => setMapStyle("satellite"));
+
+    updateBadges();
+    renderMap(null, null);
+  </script>
+</body>
+</html>
