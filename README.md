@@ -1,17 +1,35 @@
-Mission Converter Web
+# ArduPilot Mission Converter
 
-This folder now contains a static HTML/CSS/JS mission converter.
+Static web app for converting mission files between:
 
-GitHub Pages:
-- Publish this folder's `index.html` as a static site.
-- No Python backend is required.
-- All `.plan`, `.waypoints`, and `.lynk` parsing runs in the browser.
+- `.plan`
+- `.waypoints` / `.wpl`
+- `.lwp` (LYNK-specific format)
 
-Local use:
-- Open `index.html` directly in a browser, or
-- serve the folder with any static file server.
+## Features
 
-Suggested GitHub Pages URL shape:
-- `https://<username>.github.io/<repo>/`
+- Browser-based conversion
+- No backend required
+- Drag and drop file loading
+- Source / converted mission comparison
+- Map preview with source and converted overlays
+- Camera trigger visualization
+- Waypoint acceptance radius visualization
 
-If you want to keep a local Python server for convenience, `app.py` can still serve this same static page.
+## Usage
+
+Open `index.html` in a browser or publish the repository with GitHub Pages.
+
+## Live Usage
+
+Once GitHub Pages is enabled, the app can be used directly in the browser at:
+
+`https://tayfurcnr.github.io/ardupilot-mission-converter/`
+
+Users can open the page, drag and drop a supported mission file, review the source and converted structure, inspect the route on the map, and download the converted output without installing anything locally.
+
+## GitHub Pages
+
+After enabling Pages for the `main` branch root, the app will be available at:
+
+`https://tayfurcnr.github.io/ardupilot-mission-converter/`
