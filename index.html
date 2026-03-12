@@ -635,7 +635,7 @@
           <div style="width:140px;"></div>
           <div class="hero-title">
             <h1>Mission Converter</h1>
-            <p class="hero-subtitle">Load a mission, compare source and converted structure side by side, then verify the route on the minimap before export. <code>.lwp</code> is the LYNK-specific waypoint format.</p>
+            <p class="hero-subtitle">Load a mission, compare source and converted structure side by side, then verify the route on the minimap before export. <code>.lynkplan</code> is the LYNK-specific waypoint format.</p>
           </div>
           <div id="status" class="status">
             <span class="status-dot"></span>
@@ -652,9 +652,9 @@
           <div class="stack">
             <div id="dropzone" class="dropzone">
               <strong>Drag and drop a mission file</strong>
-              <span>Supports <code>.plan</code>, <code>.waypoints</code>, <code>.wpl</code>, and <code>.lwp</code> <span style="color:#ffb071;">(LYNK-specific format)</span></span>
+              <span>Supports <code>.plan</code>, <code>.waypoints</code>, <code>.wpl</code>, and <code>.lynkplan</code> <span style="color:#ffb071;">(LYNK-specific format)</span></span>
               <label for="fileInput" class="dropzone-button">Choose Mission File</label>
-              <input id="fileInput" type="file" accept=".plan,.waypoints,.wpl,.lwp" />
+              <input id="fileInput" type="file" accept=".plan,.waypoints,.wpl,.lynkplan" />
               <div id="fileNameLabel" class="dropzone-file-name">No file selected</div>
               <div class="drop-pill-row">
                 <span class="drop-pill">Offline Safe</span>
@@ -671,13 +671,13 @@
                 <select id="sourceFormat">
                   <option value="plan">plan</option>
                   <option value="waypoints">waypoints</option>
-                  <option value="lwp">lwp</option>
+                  <option value="lynkplan">lynkplan</option>
                 </select>
               </div>
               <div>
                 <label for="targetFormat">Target Format</label>
                 <select id="targetFormat">
-                  <option value="lwp">lwp</option>
+                  <option value="lynkplan">lynkplan</option>
                   <option value="plan">plan</option>
                   <option value="waypoints">waypoints</option>
                 </select>
@@ -691,7 +691,7 @@
 
             <div class="pill-row">
               <div id="sourceBadge" class="pill">Source: -</div>
-              <div id="targetBadge" class="pill accent">Target: lwp</div>
+              <div id="targetBadge" class="pill accent">Target: lynkplan</div>
               <div id="countBadge" class="pill">0 items</div>
             </div>
 
@@ -953,7 +953,7 @@
       const lower = name.toLowerCase();
       if (lower.endsWith(".plan")) return "plan";
       if (lower.endsWith(".waypoints") || lower.endsWith(".wpl")) return "waypoints";
-      if (lower.endsWith(".lwp")) return "lwp";
+      if (lower.endsWith(".lynkplan")) return "lynkplan";
       return "";
     }
 
@@ -1054,7 +1054,7 @@
         missionId = toInt(data.mission_id, 1);
         replaceExistingFlag = Boolean(data.replace_existing ?? true);
       } else {
-        throw formatError("Invalid .lwp file. Expected an object like { mission_id, replace_existing, waypoints }.");
+        throw formatError("Invalid .lynkplan file. Expected an object like { mission_id, replace_existing, waypoints }.");
       }
 
       const waypoints = rawWaypoints.map((item, index) => {
@@ -1074,7 +1074,7 @@
     function loadMissionFromText(text, fmt) {
       if (fmt === "plan") return loadPlanData(JSON.parse(text));
       if (fmt === "waypoints") return loadWaypointsText(text);
-      if (fmt === "lwp") return loadLynkData(JSON.parse(text));
+      if (fmt === "lynkplan") return loadLynkData(JSON.parse(text));
       throw formatError(`Unsupported format: ${fmt}`);
     }
 
@@ -1233,7 +1233,7 @@
       const mission = loadMissionFromText(text, sourceFmt);
       mission.mission_id = missionIdValue;
       mission.replace_existing = replaceExistingValue;
-      if (targetFmt === "lwp") return { mission, outputText: saveLynkText(mission) };
+      if (targetFmt === "lynkplan") return { mission, outputText: saveLynkText(mission) };
       if (targetFmt === "plan") return { mission, outputText: savePlanText(mission) };
       if (targetFmt === "waypoints") return { mission, outputText: saveWaypointsText(mission) };
       throw formatError(`Unsupported output format: ${targetFmt}`);
@@ -1261,7 +1261,7 @@
         updateBadges(0);
         renderMap(null, null);
         setStatus("Ready");
-        setWorkflowMessage("Only .plan, .waypoints, .wpl, and .lwp files are allowed.");
+        setWorkflowMessage("Only .plan, .waypoints, .wpl, and .lynkplan files are allowed.");
         fileInput.value = "";
         return;
       }
@@ -1458,7 +1458,7 @@
         return;
       }
 
-      const ext = targetFormat.value === "plan" ? ".plan" : targetFormat.value === "waypoints" ? ".waypoints" : ".lwp";
+      const ext = targetFormat.value === "plan" ? ".plan" : targetFormat.value === "waypoints" ? ".waypoints" : ".lynkplan";
       const base = state.fileName ? state.fileName.replace(/\.[^.]+$/, "") : "converted_mission";
       const blob = new Blob([state.outputText], { type: "text/plain;charset=utf-8" });
       const url = URL.createObjectURL(blob);

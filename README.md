@@ -4,7 +4,7 @@ Static web app for converting mission files between:
 
 - `.plan`
 - `.waypoints` / `.wpl`
-- `.lwp` (LYNK-specific format)
+- `.lynkplan` (LYNK-specific format)
 
 ## Features
 
